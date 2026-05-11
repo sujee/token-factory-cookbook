@@ -12,11 +12,13 @@ This cookbook respository is a collection of guides and examples for working wit
 ## 😎 Featured
 
 - [Token Factory Workshop](workshops/token-factory-workshop/README.md)
+- [Deep Research + Writing Agents Workshop with Nebius and Okahu](workshops/deep-research-writing-agents-nebius-okahu/README.md)
 - [Builder Hour](builder-hour/README.md)
 - [Events](community/events.md) supported by Nebius AI.
 - [Community contributions](community/README.md)
 - [Post training examples](post-training/)
 - [Distillation guide](distillation/distillation-1/)
+- [LangChain examples](langchain/README.md)
 <!-- - [Create fun images using LORA adapters](lora/lora-1/README.md) -->
 <!-- - [Fun benchmark "pelican riding a bicycle"](fun/pelican-riding-bicycle/) -->
 - [Cool Apps / Demos](apps/README.md)
@@ -61,6 +63,10 @@ Network, learn and build with fellow builders.
 ## ⛓️ [Integrations](https://docs.tokenfactory.nebius.com/integrations/overview)
 
 See integrations with other frameworks and APIs
+
+## 🦜 [LangChain examples](langchain/)
+
+Production-oriented LangChain examples for voice agents, incident response, customer support resolution, vendor risk review, and data quality operations.
 
 ---
 
@@ -137,6 +143,7 @@ Post-training allows you to customize and improve pre-trained language models fo
 ## Workshops
 
 - [Token Fastory Workshop](workshops/token-factory-workshop/README.md)
+- [Deep Research + Writing Agents Workshop with Nebius and Okahu](workshops/deep-research-writing-agents-nebius-okahu/README.md)
 
 ---
 
@@ -178,4 +185,3 @@ Thanks to all of our amazing contributors!
 
 ---
 © Nebius BV, 2025
-
