@@ -16,22 +16,6 @@ from langchain_nebius import ChatNebius
 from langchain_tavily import TavilyExtract, TavilySearch
 
 # ---------------------------------------------------------------------------
-# Tools (shared across the lead agent and all sub-agents)
-# ---------------------------------------------------------------------------
-
-# Tavily Search — LLM-optimized web search. The LLM picks query / depth /
-# time_range / include_domains at call time; we keep defaults loose so
-# each sub-agent can specialize via its prompt.
-tavily_search = TavilySearch(max_results=10)
-
-# Tavily Extract — pulls clean markdown from a specific URL the agent already
-# discovered via search. This is what makes pricing/feature-page reads usable.
-tavily_extract = TavilyExtract()
-
-TOOLS = [tavily_search, tavily_extract]
-
-
-# ---------------------------------------------------------------------------
 # Sub-agent specs
 # ---------------------------------------------------------------------------
 
@@ -224,9 +208,10 @@ def build_agent(model_name: str = "moonshotai/Kimi-K2.5"):
         ``agent.stream({"messages": [...]}, stream_mode="updates")``.
     """
     model = ChatNebius(model=model_name)
+    tools = [TavilySearch(max_results=10), TavilyExtract()]
     return create_deep_agent(
         model=model,
-        tools=TOOLS,
+        tools=tools,
         system_prompt=LEAD_SYSTEM_PROMPT,
         subagents=[PRICING_SUBAGENT, NEWS_SUBAGENT, SENTIMENT_SUBAGENT],
     )
