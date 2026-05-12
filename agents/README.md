@@ -77,7 +77,16 @@ https://www.agno.com/
 
 https://docs.langchain.com/
 
-More LangChain examples in the [langchain](langchain/) folder.
+ [All langchain examples](langchain/) are here.
+
+**😎 Deep Agents Examples**
+
+| Agent | Description | Tech Stack |
+| ----- | ----------- | ---------- |
+| [Deep Agent Example 1](langchain/deep-agent-example-1/) | Deep research agent with planning, virtual file system, and a research sub-agent using DuckDuckGo web search | LangChain deepagents · Nebius TF · DuckDuckGo |
+| [Deep Agent Example 2](langchain/deep-agent-example-1/) | A Tavily-powered web research variant | LangChain deepagents · Nebius TF · Tavily |
+
+**Langchain Agents**
 
 | Agent | Description | Tech Stack |
 | ----- | ----------- | ---------- |

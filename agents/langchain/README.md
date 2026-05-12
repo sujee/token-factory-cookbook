@@ -11,7 +11,7 @@ Production-ready LangChain agent examples powered by [Nebius TF Token Factory](h
 | Agent | Description | Tech Stack |
 | ----- | ----------- | ---------- |
 | [Deep Agent Example 1](deep-agent-example-1/) | Deep research agent with planning, virtual file system, and a research sub-agent using DuckDuckGo web search | LangChain deepagents · Nebius TF · DuckDuckGo |
-| [Deep Agent Example 2](deep-agent-example-2/) | A Tavily-powered web research variant | LangChain deepagents · Nebius TF · Tavily |
+| [Deep Agent Example 2](deep-agent-example-1/) | A Tavily-powered web research variant | LangChain deepagents · Nebius TF · Tavily |
 
 
 ### More Agent examples
