@@ -12,9 +12,3 @@ dependencies = [
     "rich>=15.0.0",
     "typer>=0.25.1",
 ]
-
-[project.scripts]
-ci-agent = "ci_agent.cli:app"
-
-[tool.setuptools]
-packages = ["ci_agent"]
