@@ -1,7 +1,7 @@
 """CLI entry point for the competitive-intelligence agent.
 
 Usage:
-    uv run cli.py "Vercel"
+    uv run cli.py "Netflix"
 
 This file owns the user-facing surface: argument parsing, environment checks,
 live event rendering, and writing the final brief to disk. The agent itself
@@ -243,9 +243,9 @@ def main(
         typer.Option(
             "--output",
             "-o",
-            help="Where to write the final brief. Defaults to ./brief-<company>.md.",
+            help="Directory to write the final brief into. Defaults to ./output/.",
         ),
-    ] = None,  # type: ignore[assignment]
+    ] = Path("./output"),
     recursion_limit: Annotated[
         int,
         typer.Option(help="LangGraph recursion limit. Bump if the agent runs out of steps."),
@@ -261,13 +261,13 @@ def main(
     console = Console()
     _check_env(console)
 
-    output = output or Path(f"brief-{company.lower().replace(' ', '-')}.md")
+    output_file = output / f"brief-{company.lower().replace(' ', '-')}.md"
 
     console.print(
         Panel(
             f"[bold]Company:[/] {company}\n"
             f"[bold]Model:[/]   {model} [dim](via Nebius Token Factory)[/]\n"
-            f"[bold]Output:[/]  {output}",
+            f"[bold]Output:[/]  {output_file}",
             title="🛰️  competitive intelligence agent",
             border_style="cyan",
         )
@@ -311,10 +311,11 @@ def main(
         )
         raise typer.Exit(code=2)
 
-    output.write_text(brief_md, encoding="utf-8")
+    output.mkdir(parents=True, exist_ok=True)
+    output_file.write_text(brief_md, encoding="utf-8")
     console.print(Markdown(brief_md))
     console.print(Rule(style="dim"))
-    console.print(f"[green]✓[/] Brief saved to [bold]{output}[/]")
+    console.print(f"[green]✓[/] Brief saved to [bold]{output_file}[/]")
 
 
 if __name__ == "__main__":

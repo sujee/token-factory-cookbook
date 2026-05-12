@@ -42,16 +42,16 @@ TAVILY_API_KEY=your-tavily-api-key
 ## Run
 
 ```bash
-uv run cli.py "Vercel"
+uv run cli.py "Netflix"
 ```
 
 That's it. The agent will:
 
-1. Identify Vercel's top direct competitors.
+1. Identify Netflix's top direct competitors.
 2. Lay out a TODO plan covering all dimensions.
 3. Dispatch sub-agents in parallel for each company.
 4. Synthesize the results into `brief.md` and save it to disk
-   (`./brief-vercel.md` by default).
+   (`./brief-netflix.md` by default).
 
 You'll see every step rendered live in the terminal: plan updates, tool calls, sub-agent dispatches, and the final brief.
 
