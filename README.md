@@ -70,7 +70,7 @@ Join [Builder Hour](builder-hour/README.md) online.
 
 Checkout the latest [model guides and sample code](models/README.md).
 
-**Featuring:** [DeepSeek V4 Pro](models/deepseek-v4.md) &nbsp;•&nbsp; [GLM-5](models/glm5.md) &nbsp;•&nbsp; [Qwen3.5-397B-A17B](models/qwen3.5.md) &nbsp;•&nbsp; [Kimi-K2.5](models/kimi-k2.5.md) &nbsp;•&nbsp; [Nemotron-3-Super-120B](models/nemotron-super.md)
+**Featuring:** [DeepSeek V4 Pro](models/deepseek-v4.md) &nbsp;•&nbsp; [GLM-5](models/glm5.md) &nbsp;•&nbsp; [Qwen3.5-397B-A17B](models/qwen3.5.md) &nbsp;•&nbsp; [Kimi-K2.5](models/kimi-k2.5.md) &nbsp;•&nbsp; [Nemotron-3-Super-120B](models/nemotron3-super-120B.md)
 
 ---
 

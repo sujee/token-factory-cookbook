@@ -6,11 +6,14 @@
 
 ## Table of Contents
 
-- [Quickstart](#quickstart)
-- [Try it Out](#try-it-out)
-- [TL;DR](#tldr)
-- [Performance and Benchmarks](#performance-and-benchmarks)
-- [References](#references)
+- [Nemotron-3-Super-120B-A12B](#nemotron-3-super-120b-a12b)
+  - [Table of Contents](#table-of-contents)
+  - [Quickstart](#quickstart)
+  - [Try it Out](#try-it-out)
+  - [TL;DR](#tldr)
+    - [Key highlights](#key-highlights)
+  - [Performance and Benchmarks](#performance-and-benchmarks)
+  - [References](#references)
 
 ---
 
@@ -57,7 +60,7 @@ Nemotron-3-Super-120B-A12B is NVIDIA's enterprise-optimized MoE model, balancing
 
 ## Performance and Benchmarks
 
-See official benchmarks on the [Nemotron HuggingFace page](https://huggingface.co/nvidia/nemotron-3-super-120b-a12b).
+See official benchmarks on the [Nemotron HuggingFace page](https://huggingface.co/nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-NVFP4).
 
 ---
 
