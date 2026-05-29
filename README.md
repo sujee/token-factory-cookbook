@@ -114,9 +114,13 @@ Numerous agent examples ranging from [starter](agents/README.md#-starter-agents)
 
 ---
 
-## ⛓️ [Integrations](https://docs.tokenfactory.nebius.com/integrations/overview)
+## ⛓️ [Integrations](integrations/README.md)
 
-See integrations with other frameworks and APIs: [docs.tokenfactory.nebius.com/integrations](https://docs.tokenfactory.nebius.com/integrations/overview)
+Guides for connecting third-party tools to Token Factory:
+
+- [OpenClaw](integrations/openclaw/README.md) — self-hosted AI agents on open models
+
+See also the official catalog: [docs.tokenfactory.nebius.com/integrations](https://docs.tokenfactory.nebius.com/integrations/overview)
 
 ---
 
