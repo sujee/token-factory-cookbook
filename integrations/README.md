@@ -7,6 +7,7 @@ Token Factory exposes an **OpenAI-compatible API** at `https://api.tokenfactory.
 | Integration | Description | Type |
 |-------------|-------------|------|
 | [OpenClaw](openclaw/) 🦞 | Run self-hosted AI agents (WhatsApp, Telegram, Discord, …) on open models served by Token Factory | Self-hosted AI assistant |
+| [Tavily](tavily/) 🔍 | LLM-optimized search API for agentic research, competitive intelligence, and web-grounded agents | Search / Research |
 
 > Looking for the official integrations catalog? See [docs.tokenfactory.nebius.com/integrations](https://docs.tokenfactory.nebius.com/integrations/overview).
 
