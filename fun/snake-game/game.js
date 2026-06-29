@@ -26,9 +26,9 @@ const MAX_LOG_ENTRIES = 100;
 // Visibility Control System
 // LLM_FULL_GRID_VIEW = true for full 30x30 grid visibility
 // LLM_FULL_GRID_VIEW = false and adjust VIEW_RADIUS for limited visibility
-// VIEW_RADIUS can be controlled from the UI (default initialized to 5)
+// VIEW_RADIUS can be controlled from the UI (default initialized to 10)
 const LLM_FULL_GRID_VIEW = false;
-let VIEW_RADIUS = 5; // Initialized to 5 as requested, can be changed from UI
+let VIEW_RADIUS = 10; // Initialized to 10 as requested, can be changed from UI
 // If true, provides a list of safe moves in the prompt (helps LLM avoid collisions)
 let collisionAvoidanceEnabled = true;
 // If true, lets the model "think"/reason before answering (chat_template_kwargs.enable_thinking)
