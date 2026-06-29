@@ -249,13 +249,14 @@ let needsRedraw = true;
 
 function startAnimation() {
     function animate() {
-        // Only redraw if game state has changed or explicitly needed
-        if (needsRedraw && (!gameState.gameOver && !gameState.paused)) {
+        // Only redraw when game state has changed or explicitly needed.
+        // During game-over/pause the scene is static except the loop countdown,
+        // which ticks once per second via updateLoopCountdownDisplay()
+        // (sets needsRedraw=true). So gating both branches on needsRedraw
+        // avoids a 60fps full-canvas redraw while the overlay is up.
+        if (needsRedraw) {
             draw();
             needsRedraw = false;
-        } else if (gameState.gameOver || gameState.paused) {
-            // Redraw for overlay or pause state
-            draw();
         }
 
         animationFrame = requestAnimationFrame(animate);
@@ -358,7 +359,7 @@ if (canvas) {
     addTrackedEventListener(canvas, 'click', () => {
         if (gameState.gameOver) {
             gameState.overlayDismissed = true;
-            draw();
+            needsRedraw = true;
         }
     });
 }
@@ -2003,7 +2004,10 @@ function redrawGraphWithOverlay(canvas, playerNum, highlightIndex) {
     }
 
     const ctx = overlay.getContext('2d');
-    ctx.scale(dpr, dpr);
+    // Reset the transform absolutely on every call (setTransform, not scale):
+    // the context is reused across mousemove events, so ctx.scale(dpr,dpr)
+    // would compound the matrix every move and break rendering on high-DPI.
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
     // Draw vertical line at hover position (within padded area)
@@ -2645,8 +2649,8 @@ function moveSingleSnake(playerNum, latency) {
         // Don't pop the tail
     }
 
-    // Draw game
-    draw();
+    // Redraw is handled by the rAF loop (needsRedraw was set above on every
+    // state change), so no direct draw() here — avoids a double redraw per move.
 
     // Check game over
     checkGameOver();
@@ -3316,6 +3320,9 @@ function updateScores() {
 // Toggle pause
 function togglePause() {
     gameState.paused = !gameState.paused;
+    // Either entering or leaving pause changes the on-canvas overlay, so
+    // request a redraw (the rAF loop is now fully gated on needsRedraw).
+    needsRedraw = true;
     const iconSpan = pauseBtn.querySelector('.btn-icon');
     if (iconSpan) {
         iconSpan.textContent = gameState.paused ? '▶️' : '⏸️';
