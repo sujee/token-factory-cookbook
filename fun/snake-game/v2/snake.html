@@ -27,6 +27,7 @@
                         <span class="btn-icon">⚡</span>
                         Load Models
                     </button>
+                    <div id="models-loaded-count" class="models-loaded-count hidden"></div>
                     <div id="loading" class="loading hidden">
                         <div class="spinner"></div>
                         <span>Loading models...</span>
@@ -129,10 +130,10 @@
 
                     <div class="section-content collapsed" id="extra-content" style="max-height: 0;">
                         <div class="benchmark-buttons-container" style="margin-top: 10px;">
-                            <button id="benchmark-btn" class="btn btn-warning btn-small" title="Run speed test on all loaded models">
-                                ⚡ Speed Test
+                            <button id="benchmark-btn" class="btn btn-warning btn-small" title="Run benchmarks on all loaded models">
+                                ⚡ Run Benchmarks
                             </button>
-                            <button id="show-results-btn" class="btn btn-info btn-small btn-disabled" title="Show benchmark results (run speed test first)">
+                            <button id="show-results-btn" class="btn btn-info btn-small btn-disabled" title="Show benchmark results (run benchmarks first)">
                                 📈 Show Results
                             </button>
                         </div>
@@ -142,8 +143,8 @@
                             <button id="sort-by-name-btn" class="btn btn-secondary btn-small" title="Sort models alphabetically by name">
                                 Sort by Name
                             </button>
-                            <button id="sort-by-speed-btn" class="btn btn-secondary btn-small btn-disabled" title="Sort models by speed (run speed test first)">
-                                Sort by Speed
+                            <button id="sort-by-speed-btn" class="btn btn-secondary btn-small btn-disabled" title="Sort models by benchmark (run benchmarks first)">
+                                Sort by Benchmark
                             </button>
                         </div>
                     </div>

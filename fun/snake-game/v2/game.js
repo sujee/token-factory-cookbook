@@ -129,6 +129,7 @@ const apiUrlInput = document.getElementById('api-url');
 const apiKeyInput = document.getElementById('api-key');
 const loadModelsBtn = document.getElementById('load-models-btn');
 const loadingDiv = document.getElementById('loading');
+const modelsLoadedCount = document.getElementById('models-loaded-count');
 const modelSelection = document.getElementById('model-selection');
 const startBattleBtn = document.getElementById('start-battle-btn');
 const errorMessage = document.getElementById('error-message');
@@ -675,6 +676,12 @@ async function loadModels() {
         populateModelSelects();
         loadingDiv.classList.add('hidden');
 
+        // Show how many models loaded (text-to-text, filtered from total)
+        if (modelsLoadedCount) {
+            modelsLoadedCount.textContent = `✓ Loaded ${availableModels.length} models (of ${allModels.length} total)`;
+            modelsLoadedCount.classList.remove('hidden');
+        }
+
         // Dispatch event for demo mode
         console.log('🎮 Dispatching modelsLoaded event');
         document.dispatchEvent(new CustomEvent('modelsLoaded'));
@@ -682,6 +689,7 @@ async function loadModels() {
 
     } catch (error) {
         loadingDiv.classList.add('hidden');
+        if (modelsLoadedCount) modelsLoadedCount.classList.add('hidden');
         showError(`Failed to load models: ${error.message}`);
         console.error('Error loading models:', error);
     }
