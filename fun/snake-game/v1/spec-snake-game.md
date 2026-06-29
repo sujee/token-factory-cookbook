@@ -12,7 +12,7 @@ A visual competitive snake battle where two LLM-controlled snakes race for survi
 
 ```
 snake-battle/
-├── snake-1.html      # Main HTML structure
+├── snake.html        # Main HTML structure
 ├── style.css         # All styling and animations
 ├── game.js           # Game logic, rendering, LLM + latency integration
 ├── benchmark.js      # Model performance testing system
@@ -319,7 +319,7 @@ All require an OpenAI-compatible `/models` and `/chat/completions`. CORS must be
 
 ## Running
 
-No build step. Open `snake-1.html` in a modern browser, enter API URL + key, Load Models, pick models, Start Battle.
+No build step. Open `snake.html` in a modern browser, enter API URL + key, Load Models, pick models, Start Battle.
 
 Optional dev server:
 
