@@ -17,6 +17,10 @@ body {
     margin: 10px 0 15px 0;
     color: #4ecdc4;
     text-shadow: 0 0 15px rgba(78, 205, 196, 0.5);
+    /* Center over the board + game log row (canvas 600 + gap 20 + log 250 = 870px,
+       matching .stats-panel), not the full pane, so the title stays aligned on resize. */
+    width: 100%;
+    max-width: 870px;
 }
 
 .hidden {
