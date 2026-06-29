@@ -27,7 +27,7 @@ snake-battle/
 
 - **Independent movement:** Each snake moves the moment its LLM responds. No synchronized turns; `gameLoop()` fires `moveSnakeWithLLM(1)` and `moveSnakeWithLLM(2)` in parallel, and each loop self-recurses.
 - **Move counter:** `player1MoveNumber` / `player2MoveNumber` increment per snake, shown as `P1 - #43` in logs.
-- **15s timeout:** `LLM_TIMEOUT_MS = 15000`. Enforced both by an `AbortController` on the fetch (throws `Timeout (>15s)`) and an outer `Promise.race` in `moveSnakeWithLLM`. On timeout: increments API failures + consecutive failures, checks forfeit, retries after `API_RETRY_DELAY_MS = 2000`.
+- **30s timeout:** `LLM_TIMEOUT_MS = 30000`. Enforced both by an `AbortController` on the fetch (throws `Timeout (>30s)`) and an outer `Promise.race` in `moveSnakeWithLLM` (the race's `setTimeout` handle is captured and cleared on success/non-timeout rejection to avoid a per-move timer leak, and registered in `activeTimeouts` for pause/stop teardown). Both timeout shapes are caught (any error message starting with `Timeout`). On timeout: increments API failures + consecutive failures, checks forfeit, then retries with **exponential backoff** (`API_RETRY_DELAY_MS * 2^timeoutAttempt` → 2s, 4s, 8s, 16s, 32s). After `MAX_TIMEOUT_RETRIES = 5` consecutive timeouts the player is marked dead and `checkGameOver` declares the opponent the winner (forfeit) — this is the terminator for persistent timeouts in normal play, since `playerForfeited` is only handled by an external demo harness. A successful move resets the backoff counter.
 - **Wall wrapping:** `wrapPosition` → `((x % GRID_SIZE) + GRID_SIZE) % GRID_SIZE` on both axes (negatives handled). Walls are safe.
 - **Collisions are deadly:** self-collision or hitting the enemy snake = death. Head-on (both heads land on the same cell) = both die. Otherwise the surviving snake wins; equal length = draw.
 - **Growth:** eating a fruit of value `V` adds `V-1` extra tail segments (net `+V` length); a replacement fruit spawns immediately.
@@ -42,7 +42,7 @@ snake-battle/
 - **Board state prompt** (`getBoardState`): player color/length/head pos, enemy info, all fruits with value/distance/value-per-distance, closest fruit + length advantage, high-value targets, ASCII board view centered on head (full 30×30 OR `(VIEW_RADIUS*2+1)` square with wrap; legend `@`=head `★`=fruit `R/r`/`B/b`=bodies `.`=empty), per-direction danger checks, and — if `collisionAvoidanceEnabled` — a `Safe moves:` line with a preferred direction toward the closest fruit.
 - **Content stripping:** regex `/<(thinking|think|thought|reasoning)>[\s\S]*?<\/\1>/gi` removes thinking tags before parsing the direction.
 - **Adaptive `max_tokens`:** cascade `[10, 100, 1000, null]` per player (`playerMaxTokensLevel`, starts at 0). On null/"Limited API response" or `finish_reason === 'length'`, the level advances and the request retries; `null` means the param is omitted.
-- **Retries:** on HTTP 429 → exponential backoff `2000 * 2^attempt`, up to `MAX_429_RETRIES = 3`. Other errors retry up to `MAX_API_RETRIES = 10`.
+- **Retries:** on HTTP 429 → exponential backoff `2000 * 2^attempt`, up to `MAX_429_RETRIES = 3`. Other (non-timeout) errors retry up to `MAX_API_RETRIES = 10`. Move timeouts retry with exponential backoff (`2000 * 2^timeoutAttempt`) up to `MAX_TIMEOUT_RETRIES = 5` before stopping the game.
 - **Forfeit:** `MAX_CONSECUTIVE_FAILURES = 3` consecutive failures dispatches a `playerForfeited` event and ends the game.
 - **Fallback:** on error/invalid response, direction falls back via `findSafeDirection` (still records a latency sample).
 - **Pause support:** `togglePause` aborts `gameLoopAbortController` (cancels in-flight fetches); resume creates a fresh controller and restarts the loop. Aborted requests are not logged.
@@ -238,7 +238,7 @@ P1 - #45: 💥 HEAD-ON COLLISION!
 
 **Game loop**
 - `gameLoop()` — bail if over/paused; create `AbortController`; fire both `moveSnakeWithLLM` in parallel.
-- `moveSnakeWithLLM(player, signal)` — guard; `Promise.race` LLM call vs 15s; on success set direction, `trackLatency`, `moveSingleSnake`, recurse; on timeout increment failures, check forfeit, schedule 2s retry.
+- `moveSnakeWithLLM(player, signal, timeoutAttempt=0)` — guard; `Promise.race` LLM call vs `LLM_TIMEOUT_MS` (timer captured, cleared on non-timeout settlement, registered in `activeTimeouts`); on success set direction, `trackLatency`, `moveSingleSnake`, recurse (resetting timeoutAttempt); on any `Timeout*` error increment failures, check forfeit, then either mark the player dead + `checkGameOver` (opponent wins by forfeit) after `MAX_TIMEOUT_RETRIES`, or schedule an exponential-backoff retry (`2^timeoutAttempt * API_RETRY_DELAY_MS`, counter escalated).
 - `moveSingleSnake(player, latency)` — increment counters, `updateScores`, log (color-coded latency + danger), collision-avoidance override, move, head-to-head vs self/enemy collision, eat fruit (grow + respawn), pop tail (or keep head if dead), draw, re-check game over.
 - `checkGameOver()` — `winnerLogged` guard; winner by dead flags + length (draw if equal); log winner; disable pause; capture `finalElapsedTime`; stop timer; dispatch `gameEnded`; start loop countdown if `loopMode`.
 

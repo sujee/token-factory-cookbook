@@ -10,6 +10,7 @@ const LLM_TIMEOUT_MS = 30000; // 30 second timeout for LLM responses
 const API_RETRY_DELAY_MS = 2000; // 2 second delay between API retries
 const MAX_API_RETRIES = 10; // Max retry attempts for non-429 errors
 const MAX_429_RETRIES = 3; // Max retry attempts specifically for 429 rate limit errors
+const MAX_TIMEOUT_RETRIES = 5; // Max consecutive move-timeout retries before the game gives up
 const MAX_CONSECUTIVE_FAILURES = 3; // Max consecutive failures before forfeiting (for demo mode)
 
 // Animation and Effects Constants
@@ -2187,7 +2188,7 @@ async function getLLMDirection(playerNum, maxTokens = null) {
         } catch (fetchError) {
             clearTimeout(timeoutId);
             if (fetchError.name === 'AbortError') {
-                throw new Error('Timeout (>15s)');
+                throw new Error(`Timeout (>${LLM_TIMEOUT_MS/1000}s)`);
             }
             throw fetchError;
             }
@@ -2581,7 +2582,7 @@ function gameLoop() {
 }
 
 // Move snake with LLM decision (called independently for each snake)
-async function moveSnakeWithLLM(playerNum, abortSignal) {
+async function moveSnakeWithLLM(playerNum, abortSignal, timeoutAttempt = 0) {
     if (gameState.gameOver || gameState.paused) {
         return;
     }
@@ -2600,21 +2601,39 @@ async function moveSnakeWithLLM(playerNum, abortSignal) {
     let result;
     let timedOut = false;
 
+    // Capture the race timer so we can clear it on success (otherwise every
+    // successful move would leave a 30s timer pending — a slow leak over a
+    // long game). Also tracked in activeTimeouts for pause/stop teardown.
+    let outerTimeoutId;
     try {
         result = await Promise.race([
             getLLMDirectionWithRetry(playerNum),
-            new Promise((_, reject) =>
-                setTimeout(() => {
+            new Promise((_, reject) => {
+                outerTimeoutId = setTimeout(() => {
+                    activeTimeouts.delete(outerTimeoutId);
                     if (gameState.debugMode) {
                         console.log(`[${formatTimestamp(new Date())}] ⚠️ P${playerNum}: Move timeout (${LLM_TIMEOUT_MS}ms)`);
                     }
                     timedOut = true;
                     reject(new Error('Timeout'));
-                }, LLM_TIMEOUT_MS)
-            )
+                }, LLM_TIMEOUT_MS);
+                activeTimeouts.add(outerTimeoutId);
+            })
         ]);
+        // Race resolved (success or inner error) before the timer fired — cancel it.
+        clearTimeout(outerTimeoutId);
+        activeTimeouts.delete(outerTimeoutId);
     } catch (error) {
-        if (error.message === 'Timeout') {
+        // Race rejected. If the inner error won (not the outer timer), the
+        // timer is still armed — cancel it so it can't fire late.
+        if (outerTimeoutId) {
+            clearTimeout(outerTimeoutId);
+            activeTimeouts.delete(outerTimeoutId);
+        }
+        // Recognize both timeout shapes: the outer race ('Timeout') and the inner
+        // AbortController timeout (e.g. 'Timeout (>30s)'). Treat both identically
+        // so the inner-timeout rejection doesn't escape as Uncaught (in promise).
+        if (error && error.message && error.message.startsWith('Timeout')) {
             // Timeout occurred - count as API failure and retry after delay
             const failuresKey = playerNum === 1 ? 'player1ApiFailures' : 'player2ApiFailures';
             const consecutiveFailuresKey = playerNum === 1 ? 'player1ConsecutiveFailures' : 'player2ConsecutiveFailures';
@@ -2637,20 +2656,38 @@ async function moveSnakeWithLLM(playerNum, abortSignal) {
             const globalStats = calculateLatencyStats(globalLatencies);
             updateLatencyStatsDisplay(playerNum, globalStats);
 
-            const delayMs = API_RETRY_DELAY_MS;
+            // Hard cap: give up after MAX_TIMEOUT_RETRIES consecutive move
+            // timeouts instead of looping forever (the playerForfeited event is
+            // only handled by an external demo harness, so in normal play there
+            // is otherwise no terminator for persistent timeouts).
+            if (timeoutAttempt + 1 > MAX_TIMEOUT_RETRIES) {
+                const modelName = (playerNum === 1 ? gameState.player1Model : gameState.player2Model).split('/').pop();
+                addLog(`❌ ${playerNum === 1 ? 'Red' : 'Blue'} (${modelName}) timed out ${MAX_TIMEOUT_RETRIES}x — forfeits.`, playerNum);
+                // Mark this player dead so checkGameOver declares the opponent
+                // the winner, logs the banner, and disables pause. (Mirrors the
+                // collision-death path in moveSingleSnake.)
+                gameState[deadKey] = true;
+                gameState.gameOver = true;
+                needsRedraw = true; // Mark canvas for redraw
+                checkGameOver();
+                return;
+            }
+
+            // Exponential backoff: 2s, 4s, 8s, 16s, 32s (capped by MAX_TIMEOUT_RETRIES).
+            const delayMs = API_RETRY_DELAY_MS * Math.pow(2, timeoutAttempt);
             if (gameState.debugMode) {
-                console.log(`[${formatTimestamp(new Date())}] ⚠️ P${playerNum}: Timeout - retrying in ${delayMs/1000}s...`);
+                console.log(`[${formatTimestamp(new Date())}] ⚠️ P${playerNum}: Timeout - retrying in ${delayMs/1000}s... (attempt ${timeoutAttempt + 1}/${MAX_TIMEOUT_RETRIES})`);
             }
             // Only log to game log if not aborted (paused)
             if (!abortSignal?.aborted) {
-                addLog(`⏱️ Timeout - retrying in ${delayMs/1000}s...`, playerNum);
+                addLog(`⏱️ Timeout - retrying in ${delayMs/1000}s... (${timeoutAttempt + 1}/${MAX_TIMEOUT_RETRIES})`, playerNum);
             }
 
-            // Wait for delay then retry if game still active
+            // Wait for delay then retry if game still active, escalating the attempt counter.
             const timeoutRetryId = setTimeout(() => {
                 activeTimeouts.delete(timeoutRetryId);
                 if (!gameState.gameOver && !abortSignal?.aborted && !gameState.paused) {
-                    moveSnakeWithLLM(playerNum, abortSignal);
+                    moveSnakeWithLLM(playerNum, abortSignal, timeoutAttempt + 1);
                 }
             }, delayMs);
             activeTimeouts.add(timeoutRetryId);
