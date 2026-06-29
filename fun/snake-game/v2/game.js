@@ -491,18 +491,21 @@ function filterTextModels(models) {
     const filtered = models.filter(model => {
         // Priority 1: Check architecture.modality (Nebius and similar APIs)
         if (model.architecture && model.architecture.modality) {
-            return model.architecture.modality === 'text->text';
+            // Include any model whose OUTPUT modality is text (e.g. "text->text",
+            // "text+image->text"). Vision-capable LLMs still output text and are
+            // usable for this game. Exclude pure image/audio generation
+            // (e.g. "text->image", "->audio", "text->audio").
+            // NOTE: do NOT require exact "text->text" — that wrongly drops
+            // vision text LLMs like moonshotai/Kimi-K2.6 ("text+image->text").
+            return /->\s*text\b/.test(model.architecture.modality);
         }
 
         // Priority 2: Check capabilities.modalities (OpenAI style)
         if (model.capabilities && model.capabilities.modalities) {
             const modalities = model.capabilities.modalities;
-            const isTextOnly = modalities.includes('text') &&
-                             !modalities.includes('image') &&
-                             !modalities.includes('audio') &&
-                             !modalities.includes('vision');
-
-            return isTextOnly;
+            // Keep if it can produce text output. Multimodal inputs
+            // (image/vision) are fine — the game only needs text back.
+            return modalities.includes('text');
         }
 
         // Priority 3: Fallback to pattern matching (only filter OUT known non-text)
