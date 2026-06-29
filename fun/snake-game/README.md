@@ -4,16 +4,6 @@ A visual snake battle game where two LLMs compete against each other! Watch as A
 
 **Key feature:** each snake moves **independently and asynchronously** — the moment its model responds — so faster models move more often. Game speed is driven by model latency, not a fixed turn delay.
 
-## What's New (v1 → v2)
-
-The `v2/` directory supersedes `v1/` and is what gets carried forward into the single merged game. Highlights of what changed:
-
-- **Per-request timeout raised to 30s** (was 15s), giving slower reasoning models room to respond.
-- **Thinking-mode toggle** — optionally pass `chat_template_kwargs.enable_thinking` to let models reason before answering (default **off**; takes effect on the next API call).
-- **Move-timeout backoff + forfeit** — a model that times out on a move now retries with exponential backoff (2s → 4s → 8s → 16s → 32s); after **5 consecutive timeouts** it forfeits the round and its opponent is declared the winner. Previously a persistent timeout had no terminator.
-- **Looser model filter** — models are now included based on their **output** modality (`->text`), so vision-capable text LLMs like `moonshotai/Kimi-K2.6` (`"text+image->text"`) are selectable. Pure image/audio *generation* models are still excluded. v1's strict `=== 'text->text'` check had wrongly dropped these.
-- **Dual-benchmark system** — the Speed Test now runs a dual benchmark with tabbed results, sortable headers, and a sort-by-benchmark menu.
-- **Game log cap** — the log DOM is trimmed to the 100 most recent entries (oldest removed first), so a long game or a resumed loop session can't accumulate unbounded nodes. Full wipes on restart/loop round are unchanged.
 
 ## Features
 
@@ -54,6 +44,15 @@ The `v2/` directory supersedes `v1/` and is what gets carried forward into the s
 7. Click **Start** to begin the battle
 
 Controls in the left pane: **Start**, **Pause** ⏸️, **Restart** 🔄, and a **Loop** toggle. The **🔧 Extra** section has the **Speed Test** benchmark and sort buttons.
+
+## What's New (v1 → v2)
+
+- **Per-request timeout raised to 30s** (was 15s), giving slower reasoning models room to respond.
+- **Thinking-mode toggle** — optionally pass `chat_template_kwargs.enable_thinking` to let models reason before answering (default **off**; takes effect on the next API call).
+- **Move-timeout backoff + forfeit** — a model that times out on a move now retries with exponential backoff (2s → 4s → 8s → 16s → 32s); after **5 consecutive timeouts** it forfeits the round and its opponent is declared the winner. Previously a persistent timeout had no terminator.
+- **Looser model filter** — models are now included based on their **output** modality (`->text`), so vision-capable text LLMs like `moonshotai/Kimi-K2.6` (`"text+image->text"`) are selectable. Pure image/audio *generation* models are still excluded. v1's strict `=== 'text->text'` check had wrongly dropped these.
+- **Dual-benchmark system** — the Speed Test now runs a dual benchmark with tabbed results, sortable headers, and a sort-by-benchmark menu.
+- **Game log cap** — the log DOM is trimmed to the 100 most recent entries (oldest removed first), so a long game or a resumed loop session can't accumulate unbounded nodes. Full wipes on restart/loop round are unchanged.
 
 ## Game Rules
 
