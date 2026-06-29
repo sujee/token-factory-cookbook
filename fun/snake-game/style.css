@@ -1043,9 +1043,9 @@ body {
 .latency-stat label {
     display: block;
     margin-bottom: 2px;
-    color: #7a8ba3;
+    color: #c2d0e0;
     text-transform: uppercase;
-    font-weight: 400;
+    font-weight: 600;
     letter-spacing: 0.5px;
     font-size: 0.75em;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
