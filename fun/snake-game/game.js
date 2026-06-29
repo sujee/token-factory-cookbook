@@ -377,9 +377,6 @@ if (p2LatencyCanvas) {
     addTrackedEventListener(p2LatencyCanvas, 'mouseleave', () => handleLatencyGraphMouseLeave(p2LatencyCanvas));
 }
 
-// Initialize fruit legend on page load
-populateFruitLegend();
-
 // Initialize collapsible sections
 function initializeCollapsibleSections() {
     const toggleButtons = document.querySelectorAll('.collapse-toggle');
@@ -428,37 +425,180 @@ if (loopCheckbox) {
     console.error('Loop checkbox not found during initialization!');
 }
 
-// Populate fruit legend
-function populateFruitLegend() {
-    const legendContent = document.getElementById('fruit-legend-content');
-    if (!legendContent) return;
+// Fruit info with rarity labels (data source for the legend popover)
+const FRUIT_LEGEND_INFO = [
+    { emoji: '🍎', name: 'Apple', value: 1, rarity: 'Common (40%)' },
+    { emoji: '⭐', name: 'Star', value: 3, rarity: 'Uncommon (25%)' },
+    { emoji: '🍇', name: 'Grapes', value: 2, rarity: 'Uncommon (15%)' },
+    { emoji: '🍒', name: 'Cherry', value: 2, rarity: 'Rare (10%)' },
+    { emoji: '🦋', name: 'Butterfly', value: 3, rarity: 'Rare (6%)' },
+    { emoji: '💎', name: 'Diamond', value: 4, rarity: 'Very Rare (3%)', isRare: true },
+    { emoji: '🎁', name: 'Present', value: 5, rarity: 'Ultra Rare (1%)', isUltraRare: true },
+];
 
-    // Fruit info with rarity labels
-    const fruitInfo = [
-        { emoji: '🍎', name: 'Apple', value: 1, rarity: 'Common (40%)' },
-        { emoji: '⭐', name: 'Star', value: 3, rarity: 'Uncommon (25%)' },
-        { emoji: '🍇', name: 'Grapes', value: 2, rarity: 'Uncommon (15%)' },
-        { emoji: '🍒', name: 'Cherry', value: 2, rarity: 'Rare (10%)' },
-        { emoji: '🦋', name: 'Butterfly', value: 3, rarity: 'Rare (6%)' },
-        { emoji: '💎', name: 'Diamond', value: 4, rarity: 'Very Rare (3%)', isRare: true },
-        { emoji: '🎁', name: 'Present', value: 5, rarity: 'Ultra Rare (1%)', isUltraRare: true },
-    ];
-
-    legendContent.innerHTML = '';
-    fruitInfo.forEach(fruit => {
+// Build the legend fruit rows into the given container (reused by the popover).
+function buildFruitLegendRows(container) {
+    container.innerHTML = '';
+    FRUIT_LEGEND_INFO.forEach(fruit => {
         const item = document.createElement('div');
         item.className = `fruit-item ${fruit.isUltraRare ? 'ultra-rare' : fruit.isRare ? 'rare' : ''}`;
 
-        item.innerHTML = `
-            <div class="fruit-icon">${fruit.emoji}</div>
-            <div class="fruit-info">
-                <div class="fruit-name">${fruit.name}</div>
-                <div class="fruit-value">+${fruit.value}</div>
-                <div class="fruit-rarity">${fruit.rarity}</div>
-            </div>
-        `;
+        const icon = document.createElement('div');
+        icon.className = 'fruit-icon';
+        icon.textContent = fruit.emoji; // trusted constant, no user input
 
-        legendContent.appendChild(item);
+        const info = document.createElement('div');
+        info.className = 'fruit-info';
+
+        const name = document.createElement('div');
+        name.className = 'fruit-name';
+        name.textContent = fruit.name;
+
+        const value = document.createElement('div');
+        value.className = 'fruit-value';
+        value.textContent = `+${fruit.value}`;
+
+        const rarity = document.createElement('div');
+        rarity.className = 'fruit-rarity';
+        rarity.textContent = fruit.rarity;
+
+        info.appendChild(name);
+        info.appendChild(value);
+        info.appendChild(rarity);
+        item.appendChild(icon);
+        item.appendChild(info);
+        container.appendChild(item);
+    });
+}
+
+// --- Fruit legend popover controller -------------------------------------
+// Mirrors the benchmark sort flyout lifecycle (benchmark.js sortModelsBySpeed /
+// _closeSortMenu / _positionSortMenu): a position:fixed <div> appended to
+// <body>, pinned to the trigger button, with outside-click + Escape dismiss
+// and scroll/resize repositioning. Full listener teardown on close.
+let _fruitLegendPopover = null;
+let _fruitLegendOutsideHandler = null;
+let _fruitLegendKeyHandler = null;
+let _fruitLegendRepositionHandler = null;
+
+function toggleFruitLegendPopover() {
+    const btn = document.getElementById('fruit-legend-btn');
+    if (!btn) return;
+
+    // Toggle: if already open, close it.
+    if (_fruitLegendPopover && _fruitLegendPopover.parentNode) {
+        closeFruitLegendPopover();
+        return;
+    }
+
+    const popover = document.createElement('div');
+    popover.className = 'fruit-legend-popover';
+    const title = document.createElement('div');
+    title.className = 'fruit-legend-popover-title';
+    title.textContent = 'Fruit Legend';
+    const content = document.createElement('div');
+    content.className = 'fruit-legend-content';
+    buildFruitLegendRows(content);
+    popover.appendChild(title);
+    popover.appendChild(content);
+
+    // Append to <body> so the flyout escapes any overflow:hidden / scrollable
+    // ancestor, then position relative to the button.
+    document.body.appendChild(popover);
+    _fruitLegendPopover = popover;
+    positionFruitLegendPopover();
+    btn.classList.add('fruit-legend-btn-active');
+    btn.setAttribute('aria-expanded', 'true');
+
+    // Outside-click / Escape dismisses the popover.
+    _fruitLegendOutsideHandler = (e) => {
+        if (!popover.contains(e.target) && e.target !== btn && !btn.contains(e.target)) {
+            closeFruitLegendPopover();
+        }
+    };
+    _fruitLegendKeyHandler = (e) => {
+        if (e.key === 'Escape') closeFruitLegendPopover();
+    };
+    // Keep the popover pinned to the button while the page scrolls/resizes.
+    _fruitLegendRepositionHandler = () => positionFruitLegendPopover();
+    // Defer attaching so the click that opened the popover doesn't close it.
+    setTimeout(() => {
+        document.addEventListener('click', _fruitLegendOutsideHandler);
+        document.addEventListener('keydown', _fruitLegendKeyHandler);
+        window.addEventListener('scroll', _fruitLegendRepositionHandler, true);
+        window.addEventListener('resize', _fruitLegendRepositionHandler);
+    }, 0);
+}
+
+function closeFruitLegendPopover() {
+    if (_fruitLegendPopover && _fruitLegendPopover.parentNode) {
+        _fruitLegendPopover.parentNode.removeChild(_fruitLegendPopover);
+    }
+    _fruitLegendPopover = null;
+    if (_fruitLegendOutsideHandler) {
+        document.removeEventListener('click', _fruitLegendOutsideHandler);
+        _fruitLegendOutsideHandler = null;
+    }
+    if (_fruitLegendKeyHandler) {
+        document.removeEventListener('keydown', _fruitLegendKeyHandler);
+        _fruitLegendKeyHandler = null;
+    }
+    if (_fruitLegendRepositionHandler) {
+        window.removeEventListener('scroll', _fruitLegendRepositionHandler, true);
+        window.removeEventListener('resize', _fruitLegendRepositionHandler);
+        _fruitLegendRepositionHandler = null;
+    }
+    const btn = document.getElementById('fruit-legend-btn');
+    if (btn) {
+        btn.classList.remove('fruit-legend-btn-active');
+        btn.setAttribute('aria-expanded', 'false');
+    }
+}
+
+/**
+ * Pin the popover just below the trigger button, left-aligned to it. Flips to
+ * the right side if there's no room on the left, and clamps vertically so a
+ * long popover never runs off the bottom of the viewport. Mirrors the edge
+ * logic in _positionSortMenu (benchmark.js). Uses fixed coords so it isn't
+ * affected by page scroll.
+ */
+function positionFruitLegendPopover() {
+    if (!_fruitLegendPopover) return;
+    const btn = document.getElementById('fruit-legend-btn');
+    if (!btn) return;
+    const popover = _fruitLegendPopover;
+    const btnRect = btn.getBoundingClientRect();
+
+    // Measure once placed to decide edge flips.
+    popover.style.left = '0px';
+    popover.style.top = '0px';
+    const popoverRect = popover.getBoundingClientRect();
+
+    let left = btnRect.left;
+    // Flip to the right side if it would overflow the viewport's left edge.
+    if (left + popoverRect.width > window.innerWidth) {
+        left = window.innerWidth - popoverRect.width - 8;
+    }
+    if (left < 8) left = 8;
+
+    let top = btnRect.bottom + 6;
+    // Clamp vertically so a long popover never runs off the bottom of the screen.
+    const maxTop = Math.max(8, window.innerHeight - popoverRect.height - 8);
+    if (top > maxTop) {
+        // Not enough room below: open upward from the button's top instead.
+        top = Math.max(8, btnRect.top - popoverRect.height - 6);
+    }
+
+    popover.style.left = `${left}px`;
+    popover.style.top = `${top}px`;
+}
+
+// Wire the trigger button.
+const fruitLegendBtn = document.getElementById('fruit-legend-btn');
+if (fruitLegendBtn) {
+    fruitLegendBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFruitLegendPopover();
     });
 }
 
@@ -3499,9 +3639,6 @@ function startGame(fromDemoMode = false) {
         showError('Please select both player models');
         return;
     }
-
-    // Populate fruit legend
-    populateFruitLegend();
 
     logContent.innerHTML = '';
     initializeGame();

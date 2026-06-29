@@ -157,20 +157,21 @@
         <div class="right-pane">
             <h1 class="game-pane-title">🐍🐍 Snake Battle 🐍🐍</h1>
             <div class="game-pane">
-                <!-- Timer Display -->
-                <div class="timer-display stats-panel-timer" id="game-timer">
-                    <span class="timer-icon">⏱️</span>
-                    <span class="timer-value">0:00</span>
+                <!-- Timer + legend trigger (one row, above the board) -->
+                <div class="game-toolbar">
+                    <button type="button" id="fruit-legend-btn" class="fruit-legend-btn"
+                            aria-expanded="false" aria-haspopup="true" title="Legend"
+                            aria-label="Legend">
+                        🍎
+                    </button>
+                    <div class="timer-display stats-panel-timer" id="game-timer">
+                        <span class="timer-icon">⏱️</span>
+                        <span class="timer-value">0:00</span>
+                    </div>
                 </div>
 
-                <!-- Game Area -->
+                <!-- Game Area: legend column removed; canvas is now leftmost -->
                 <div class="game-layout">
-                    <div class="game-left-panel">
-                        <div class="fruit-legend">
-                            <h3>Fruit Legend</h3>
-                            <div id="fruit-legend-content"></div>
-                        </div>
-                    </div>
                     <div class="game-center-panel">
                         <div class="game-canvas-container">
                             <canvas id="game-canvas"></canvas>

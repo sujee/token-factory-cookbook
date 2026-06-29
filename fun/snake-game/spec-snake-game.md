@@ -78,7 +78,7 @@ Each fruit's growth value is overlaid as bold 8px text during render.
 
 Two-column flex (`main-container`, `.left-pane` + `.right-pane`): a **left config pane** (`width:400px`, `min-width:350px`, `flex-shrink:0`) and a **right game pane** (`flex:1`, `overflow-y:auto`). The right pane scrolls as a whole — its children aren't independently scrolling outside the log canvas and latency graph canvases.
 
-**Responsive:** stacks vertically (`flex-direction:column`) at **≤600px**; at **≤1200px** the left pane shrinks to `350px` (`min-width:300px`) and the fruit-legend panel to `180px`. Font scales down at ≤1400px and ≤1200px (`.player-model`, `.player-stats-text`, `.vs`).
+**Responsive:** stacks vertically (`flex-direction:column`) at **≤600px**; at **≤1200px** the left pane shrinks to `350px` (`min-width:300px`). Font scales down at ≤1400px and ≤1200px (`.player-model`, `.player-stats-text`, `.vs`).
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -121,8 +121,8 @@ Two-column flex (`main-container`, `.left-pane` + `.right-pane`): a **left confi
 Order, top → bottom: timer, three-column game layout, stats panel.
 
 - **Timer** (`#game-timer`, `⏱️ M:SS`): sits at the top of the game pane above `.game-layout`. Freezes at game end via `finalElapsedTime`.
-- **Three-column game-layout** (`.game-layout`, flex, `gap:20px`, `width:100%`):
-  - **Left — Fruit Legend** (`.game-left-panel` `width:200px` `flex-shrink:0` → `.fruit-legend` `max-width:200px`): always visible, 7 items with emoji/name/value/rarity.
+- **Two-column game-layout** (`.game-layout`, flex, `gap:20px`, `width:100%`), preceded by a **`.game-toolbar`** row holding the `🍎 Legend` trigger button:
+  - **Legend trigger** (`#fruit-legend-btn`, `.fruit-legend-btn` in `.game-toolbar`): compact button; click opens a fixed `.fruit-legend-popover` (pinned below the button, `z-index:10000`, outside-click/Escape/scroll-resize aware) showing 7 fruit rows with emoji/name/value/rarity. No longer an always-visible left column.
   - **Center — Canvas** (`.game-center-panel` `flex:1` `max-width:600px` → `#game-canvas`, 600×600px, 30×30 grid at 20px/cell, bg `#0a0a15`, subtle grid, glowing teal border).
   - **Right — Game Log** (`.game-right-panel` `width:250px` `flex-shrink:0` → `.game-log-panel` `width:100%` **fixed `height:600px`**, scrollable `#log-content`, 11px font, custom teal scrollbar).
 - **Stats panel** (`.stats-panel`, below the game layout): two `.player-card`s (`flex:1`) separated by a `.vs`. Each card: colored dot, model name (truncated >25 chars → 22+"…"), and metrics `length/moves/↑bytes ↓bytes`, plus a `.latency-timegraph` (60px high graph canvas) and a `.latency-stats` block (Min/Median/P90/Max/API calls).
