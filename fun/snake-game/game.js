@@ -1333,6 +1333,15 @@ function wrapPosition(x, y) {
     };
 }
 
+// Toroidal (wrap-aware) Manhattan distance between two grid points.
+// Consistent with the wrapped board view: a fruit just past a wall is
+// reported as close, not far away.
+function toroidalDist(ax, ay, bx, by) {
+    const dx = Math.abs(ax - bx);
+    const dy = Math.abs(ay - by);
+    return Math.min(dx, GRID_SIZE - dx) + Math.min(dy, GRID_SIZE - dy);
+}
+
 // Get game board state as text for LLM
 function getBoardState(playerNum) {
     const snake = playerNum === 1 ? gameState.snake1 : gameState.snake2;
@@ -1347,14 +1356,14 @@ function getBoardState(playerNum) {
     let closestFruit = null;
     let closestDist = Infinity;
     gameState.fruits.forEach(fruit => {
-        const dist = Math.abs(head.x - fruit.x) + Math.abs(head.y - fruit.y);
+        const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
         if (dist < closestDist) {
             closestDist = dist;
             closestFruit = fruit;
         }
     });
 
-    const distToEnemy = Math.abs(head.x - enemyHead.x) + Math.abs(head.y - enemyHead.y);
+    const distToEnemy = toroidalDist(head.x, head.y, enemyHead.x, enemyHead.y);
 
     // Build board representation - either full grid or view around snake head
     let boardView = "";
@@ -1421,7 +1430,7 @@ function getBoardState(playerNum) {
     // List all fruits with strategic values
     state += `FRUITS (${gameState.fruits.length} available):\n`;
     gameState.fruits.forEach((fruit, i) => {
-        const dist = Math.abs(head.x - fruit.x) + Math.abs(head.y - fruit.y);
+        const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
         const valueRatio = fruit.type.value / Math.max(dist, 1); // Value per distance unit
         state += `${i + 1}. ${fruit.type.emoji} at (${fruit.x}, ${fruit.y}) - Value: ${fruit.type.value} - Distance: ${dist} - Value/Distance: ${valueRatio.toFixed(2)}\n`;
     });
@@ -1439,7 +1448,7 @@ function getBoardState(playerNum) {
     if (highValueFruits.length > 0) {
         state += `HIGH-VALUE TARGETS (${highValueFruits.length} rare fruits):\n`;
         highValueFruits.forEach((fruit, i) => {
-            const dist = Math.abs(head.x - fruit.x) + Math.abs(head.y - fruit.y);
+            const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
             state += `- ${fruit.type.emoji} ${fruit.type.value}x growth at (${fruit.x}, ${fruit.y}) - Distance: ${dist}\n`;
         });
         state += `\n`;
