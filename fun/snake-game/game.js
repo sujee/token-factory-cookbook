@@ -35,32 +35,44 @@ let collisionAvoidanceEnabled = true;
 let thinkingModeEnabled = false;
 
 // LLM System Prompt
-const SYSTEM_PROMPT1 = `You are a snake game AI with LIMITED VISIBILITY. Your goal: SURVIVE longer than your opponent while strategically eating fruits to grow. Respond INSTANTLY with ONLY ONE WORD: up, down, left, or right. NO thinking, NO explanation, NO extra text.
+//
+// --- ORIGINAL SYSTEM PROMPT (backup) ---
+// const SYSTEM_PROMPT1 = `You are a snake game AI with LIMITED VISIBILITY. Your goal: SURVIVE longer than your opponent while strategically eating fruits to grow. Respond INSTANTLY with ONLY ONE WORD: up, down, left, or right. NO thinking, NO explanation, NO extra text.
+//
+// VISIBILITY LIMITATIONS:
+// - You can only see a {VISIBILITY_SIZE}x{VISIBILITY_SIZE} area centered on your head
+// - Beyond this view, you cannot see snakes, fruits, or obstacles
+// - Walls are SAFE - you wrap through to the other side, BUT the destination must be clear within your view
+// - Visibility radius can be adjusted by the game operator
+//
+// CRITICAL SURVIVAL RULES:
+// - NEVER move into YOUR OWN BODY or into ENEMY SNAKE - instant death
+// - Walls are SAFE - you wrap through to the other side, BUT check the destination
+// - Prioritize SURVIVAL over fruit, BUT seek fruit when safe to gain length advantage
+//
+// STRATEGIC FRUIT SEEKING:
+// - Target HIGH-VALUE fruits (⭐💎🦋🎁) for maximum growth advantage
+// - Consider distance vs value - sometimes a distant high-value fruit is worth pursuing
+// - Compare your length to enemy's - seek fruits to maintain or gain length advantage
+// - When equally safe, prefer moves toward the CLOSEST HIGH-VALUE fruit within your view
+// - Sometimes the shortest path to a fruit is by wrapping through a wall.
+//
+// SPATIAL AWARENESS:
+// - Look at your body and visible enemy snake positions - create mental map of occupied spaces
+// - Find large empty areas to move into - avoid tight spaces alongside your body
+// - If your body is blocking one direction, move AWAY from it
+// - The safest moves are into open space, not alongside or toward your body
+// - When approaching the edge of your vision, consider exploring to expand your knowledge of the board
+// `;
+// --- END ORIGINAL SYSTEM PROMPT ---
+//
+const SYSTEM_PROMPT1 = `You are a snake game AI with LIMITED VISIBILITY. Goal: SURVIVE longer than your opponent while eating fruits to grow. Respond with ONLY ONE WORD: up, down, left, or right. No thinking, no explanation, no extra text.
 
-VISIBILITY LIMITATIONS:
-- You can only see a {VISIBILITY_SIZE}x{VISIBILITY_SIZE} area centered on your head
-- Beyond this view, you cannot see snakes, fruits, or obstacles
-- Walls are SAFE - you wrap through to the other side, BUT the destination must be clear within your view
-- Visibility radius can be adjusted by the game operator
-
-CRITICAL SURVIVAL RULES:
-- NEVER move into YOUR OWN BODY or into ENEMY SNAKE - instant death
-- Walls are SAFE - you wrap through to the other side, BUT check the destination
-- Prioritize SURVIVAL over fruit, BUT seek fruit when safe to gain length advantage
-
-STRATEGIC FRUIT SEEKING:
-- Target HIGH-VALUE fruits (⭐💎🦋🎁) for maximum growth advantage
-- Consider distance vs value - sometimes a distant high-value fruit is worth pursuing
-- Compare your length to enemy's - seek fruits to maintain or gain length advantage
-- When equally safe, prefer moves toward the CLOSEST HIGH-VALUE fruit within your view
-- Sometimes the shortest path to a fruit is by wrapping through a wall.
-
-SPATIAL AWARENESS:
-- Look at your body and visible enemy snake positions - create mental map of occupied spaces
-- Find large empty areas to move into - avoid tight spaces alongside your body
-- If your body is blocking one direction, move AWAY from it
-- The safest moves are into open space, not alongside or toward your body
-- When approaching the edge of your vision, consider exploring to expand your knowledge of the board
+- VISIBILITY: you see a {VISIBILITY_SIZE}x{VISIBILITY_SIZE} area centered on your head; beyond it is unknown.
+- WALLS: safe - you wrap through to the other side, but the destination must be clear.
+- SURVIVAL: never move into YOUR OWN BODY or the ENEMY SNAKE (instant death). Prioritize survival over fruit.
+- FRUIT: when safe, prefer HIGH-VALUE fruits (⭐💎🦋🎁); the board lists each fruit's value, distance, and a strategic direction hint.
+- SPACE: favor moves into open space; avoid tight spots alongside your body. When your body blocks a direction, move away from it.
 `;
 
 // Use SYSTEM_PROMPT1 as the system prompt
@@ -1427,12 +1439,43 @@ function getBoardState(playerNum) {
     state += `Your head at: (${head.x}, ${head.y})\n`;
     state += `Enemy head at: (${enemyHead.x}, ${enemyHead.y})\n\n`;
 
-    // List all fruits with strategic values
-    state += `FRUITS (${gameState.fruits.length} available):\n`;
-    gameState.fruits.forEach((fruit, i) => {
-        const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
-        const valueRatio = fruit.type.value / Math.max(dist, 1); // Value per distance unit
-        state += `${i + 1}. ${fruit.type.emoji} at (${fruit.x}, ${fruit.y}) - Value: ${fruit.type.value} - Distance: ${dist} - Value/Distance: ${valueRatio.toFixed(2)}\n`;
+    // --- ORIGINAL FRUIT LIST / HIGH-VALUE TARGETS BLOCK (backup) ---
+    // state += `FRUITS (${gameState.fruits.length} available):\n`;
+    // gameState.fruits.forEach((fruit, i) => {
+    //     const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
+    //     const valueRatio = fruit.type.value / Math.max(dist, 1); // Value per distance unit
+    //     state += `${i + 1}. ${fruit.type.emoji} at (${fruit.x}, ${fruit.y}) - Value: ${fruit.type.value} - Distance: ${dist} - Value/Distance: ${valueRatio.toFixed(2)}\n`;
+    // });
+    // state += `\n`;
+    //
+    // const highValueFruits = gameState.fruits.filter(fruit => fruit.type.value > 1);
+    // if (highValueFruits.length > 0) {
+    //     state += `HIGH-VALUE TARGETS (${highValueFruits.length} rare fruits):\n`;
+    //     highValueFruits.forEach((fruit, i) => {
+    //         const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
+    //         state += `- ${fruit.type.emoji} ${fruit.type.value}x growth at (${fruit.x}, ${fruit.y}) - Distance: ${dist}\n`;
+    //     });
+    //     state += `\n`;
+    // }
+    // --- END ORIGINAL BLOCK ---
+
+    // Single sorted fruit list: best value/distance first, high-value flagged inline.
+    // (Replaces a previous duplicate HIGH-VALUE TARGETS block that re-listed these.)
+    const rankedFruits = gameState.fruits
+        .map(fruit => ({
+            fruit,
+            dist: toroidalDist(head.x, head.y, fruit.x, fruit.y)
+        }))
+        .sort((a, b) => {
+            const ratioA = a.fruit.type.value / Math.max(a.dist, 1);
+            const ratioB = b.fruit.type.value / Math.max(b.dist, 1);
+            return ratioB - ratioA; // higher value/distance first
+        });
+
+    state += `FRUITS (${gameState.fruits.length} available, best first; * = high-value):\n`;
+    rankedFruits.forEach(({ fruit, dist }, i) => {
+        const marker = fruit.type.value > 1 ? ' *' : '';
+        state += `${i + 1}. ${fruit.type.emoji} at (${fruit.x}, ${fruit.y}) - Value: ${fruit.type.value} - Distance: ${dist}${marker}\n`;
     });
     state += `\n`;
 
@@ -1443,22 +1486,11 @@ function getBoardState(playerNum) {
         state += `YOUR LENGTH ADVANTAGE: ${lengthAdvantage > 0 ? '+' : ''}${lengthAdvantage} (Target fruits to maintain or gain advantage)\n\n`;
     }
 
-    // Highlight high-value fruits
-    const highValueFruits = gameState.fruits.filter(fruit => fruit.type.value > 1);
-    if (highValueFruits.length > 0) {
-        state += `HIGH-VALUE TARGETS (${highValueFruits.length} rare fruits):\n`;
-        highValueFruits.forEach((fruit, i) => {
-            const dist = toroidalDist(head.x, head.y, fruit.x, fruit.y);
-            state += `- ${fruit.type.emoji} ${fruit.type.value}x growth at (${fruit.x}, ${fruit.y}) - Distance: ${dist}\n`;
-        });
-        state += `\n`;
-    }
-
     // Legend
     const viewDescription = LLM_FULL_GRID_VIEW ? "full board" : `${viewSize}x${viewSize} area around you`;
     state += `Board view (${viewDescription}):\n`;
     state += `@ = your head | ★ = fruit | ${playerNum === 1 ? "R/ r" : "B/b"} = your body | ${playerNum === 1 ? "B/b" : "R/r"} = enemy | . = empty\n`;
-    state += ` \n\n`;
+    state += `\n`;
     state += boardView + "\n";
 
     // Check for immediate dangers (walls don't kill, only snakes do)
