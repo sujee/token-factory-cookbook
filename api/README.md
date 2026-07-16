@@ -15,9 +15,19 @@ This guide shows how to run models using various python APIs.
 - Be sure to finish [the setup](../getting-started.md)
 - And install the requirements
 
-```bash
-# follow the seutp-dev-env.md guide above to set up your python env.
+### Using `uv` (recommended)
 
+```bash
+# one-time: sync the lockfile and virtual environment
+uv sync
+
+# run a script
+uv run python test_chat_and_responses_api.py
+```
+
+### Using `pip`
+
+```bash
 # activate the python env
 source  .venv/bin/activate
 pip install -r  requirements.txt
@@ -59,5 +69,9 @@ Example code: [api_llamaindex.ipynb](api_llamaindex.ipynb)
 See [Nebius third party API documentation](https://docs.tokenfactory.nebius.com//inference/integrations) for complete list.
 
 
+## Test Chat / Responses API
 
+[test_chat_and_responses_api.py](test_chat_and_responses_api.py) will test a single model for Chat API and Responses API
+
+[test_apis_for_all_models.py](test_apis_for_all_models.py) will test all models in Token Factory for Chat API and Responses API.
 
