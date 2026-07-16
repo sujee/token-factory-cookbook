@@ -1,0 +1,16 @@
+[project]
+name = "nebius-token-factory-api-examples"
+version = "0.1.0"
+description = "Simple API examples for Nebius Token Factory"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openai",
+    "aisuite",
+    "docstring-parser",
+    "litellm",
+    "llama-index-llms-nebius",
+    "python-dotenv",
+    "ipykernel",
+]
+
