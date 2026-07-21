@@ -1,16 +1,17 @@
 # Nebius Token Factory Cookbook
 
-<!-- <img src="images/banner-1.jpg"> -->
+This is my personal fork of official [Nebius Token Factory Cookbook](https://github.com/nebius/token-factory-cookbook)
 
-A collection of guides and examples for building intelligent applications with open models on [Nebius Token Factory](https://tokenfactory.nebius.com/).
+## My Updates
 
-> ⭐ If you find this repo useful, give it a star! You'll be notified of new updates and help others discover it too — thank you!
+- [Chat / Response API validator](models/validation/README.md)
 
 ---
 
 ## Table of Contents
 
 - [Nebius Token Factory Cookbook](#nebius-token-factory-cookbook)
+  - [My Updates](#my-updates)
   - [Table of Contents](#table-of-contents)
   - [😎 Featured](#-featured)
   - [👷 For Builders](#-for-builders)
